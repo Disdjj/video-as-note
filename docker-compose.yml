@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  video-as-note:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # 从环境变量或.env文件读取API密钥
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - LITELLM_MODEL=${LITELLM_MODEL:-gpt-3.5-turbo}
+      - LITELLM_TEMPERATURE=${LITELLM_TEMPERATURE:-0.7}
+      - LITELLM_MAX_TOKENS=${LITELLM_MAX_TOKENS:-4000}
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      # 开发模式下可以挂载代码目录
+      - ./app:/app/app:ro
+      - ./static:/app/static:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选：添加Redis用于缓存和会话存储
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped
+
+networks:
+  default:
+    name: video-as-note-network
