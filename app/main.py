@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from app.api import router
+from app.api.streaming_routes import stream_router
 from app.middleware import (
     LoggingMiddleware,
     RequestIDMiddleware,
@@ -43,6 +44,7 @@ app_logger.info("中间件配置完成")
 
 # 注册API路由
 app.include_router(router, prefix="/api/v1", tags=["main"])
+app.include_router(stream_router, prefix="/api/v1")
 app_logger.info("API路由注册完成")
 
 # 静态文件服务
@@ -56,10 +58,40 @@ if os.path.exists("static"):
 async def read_index():
     """返回前端页面"""
     app_logger.info("访问首页")
-    if os.path.exists("static/index.html"):
-        return FileResponse("static/index.html")
+    # 优先返回新的 Vue 前端，如果不存在则退回旧版
+    vue_index = "static/index_vue.html"
+    legacy_index = "static/index.html"
+
+    if os.path.exists(vue_index):
+        return FileResponse(vue_index)
+    elif os.path.exists(legacy_index):
+        return FileResponse(legacy_index)
     else:
         return {"message": "欢迎使用YouTube视频字幕转讲义工具", "api_docs": "/docs"}
+
+
+# 新版 Vue 前端路由
+@app.get("/vue")
+async def read_vue():
+    """返回新版 Vue 前端页面"""
+    app_logger.info("访问新版 Vue 前端")
+    vue_index = "static/index_vue.html"
+    if os.path.exists(vue_index):
+        return FileResponse(vue_index)
+    else:
+        return {"error": "新版前端未找到，请确认 static/index_vue.html 是否存在"}
+
+
+# 旧版（Tailwind 纯 HTML）前端路由
+@app.get("/legacy")
+async def read_legacy():
+    """返回旧版前端页面"""
+    app_logger.info("访问旧版前端")
+    legacy_index = "static/index.html"
+    if os.path.exists(legacy_index):
+        return FileResponse(legacy_index)
+    else:
+        return {"error": "旧版前端未找到，请确认 static/index.html 是否存在"}
 
 
 # 健康检查
