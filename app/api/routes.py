@@ -9,14 +9,16 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 
 from app.models import VideoRequest, LectureNote, ProcessingStatus, ModelConfig
-from app.services import TranscriptService, LLMService
+# 使用新的 AIService 取代旧的 LLMService
+from app.services.transcript_service import TranscriptService
+from app.services.ai_service import AIService
 from app.utils.logger import api_logger, log_api_request
 
 router = APIRouter()
 
 # 全局服务实例
 transcript_service = TranscriptService()
-llm_service = LLMService()
+ai_service = AIService()
 
 # 存储处理状态的简单内存存储（生产环境应使用数据库）
 processing_status: Dict[str, ProcessingStatus] = {}
@@ -54,7 +56,7 @@ async def process_video_async(video_id: str, model_name: str, language: str):
 
         # 生成讲义
         llm_start = time.time()
-        lecture_note = llm_service.generate_lecture_note(
+        lecture_note = await ai_service.generate_lecture_note(
             transcript_text=transcript_text,
             video_id=video_id,
             model_name=model_name,
@@ -101,8 +103,8 @@ async def validate_model(request: Dict[str, str]):
         api_logger.info(f"开始验证模型: {model_name}")
         start_time = time.time()
 
-        is_valid = llm_service.validate_model(model_name)
-        model_info = llm_service.get_model_info(model_name)
+        is_valid = await ai_service.validate_model(model_name)
+        model_info = await ai_service.get_model_info(model_name)
 
         validation_time = time.time() - start_time
         api_logger.info(f"模型验证完成: {model_name}, 有效性: {is_valid}, 耗时: {validation_time:.2f}秒")
@@ -124,7 +126,7 @@ async def get_model_info(model_name: str):
 
     try:
         start_time = time.time()
-        model_info = llm_service.get_model_info(model_name)
+        model_info = await ai_service.get_model_info(model_name)
         info_time = time.time() - start_time
 
         api_logger.info(f"获取模型信息成功: {model_name}, 耗时: {info_time:.2f}秒")
@@ -147,7 +149,7 @@ async def process_video(request: VideoRequest, background_tasks: BackgroundTasks
 
         # 验证用户指定的模型是否可用
         api_logger.info(f"验证模型可用性: {request.model_name}")
-        if not llm_service.validate_model(request.model_name):
+        if not await ai_service.validate_model(request.model_name):
             api_logger.warning(f"模型不可用: {request.model_name}")
             raise HTTPException(
                 status_code=400,

@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频转讲义 - 智能学习助手</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --el-color-primary: #409eff;
+            --app-background: #f5f7fa;
+            --card-background: #ffffff;
+            --text-primary: #303133;
+            --text-secondary: #606266;
+            --border-color: #e4e7ed;
+        }
+        
+        .dark-theme {
+            --el-color-primary: #5e9cff;
+            --app-background: #141414;
+            --card-background: #1d1d1d;
+            --text-primary: #e5eaf3;
+            --text-secondary: #a3a6ad;
+            --border-color: #414243;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--app-background);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #3a8ee6 0%, #5e5ce6 100%);
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo i {
+            font-size: 1.75rem;
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .main-content {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .card-title i {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+            color: var(--el-color-primary);
+        }
+        
+        .card-title h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .model-status {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .model-examples {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .progress-container {
+            margin-bottom: 1rem;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .markdown-content {
+            padding: 1.5rem;
+            background-color: var(--app-background);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            line-height: 1.6;
+            overflow-wrap: break-word;
+            color: var(--text-primary);
+        }
+        
+        .markdown-content h1, 
+        .markdown-content h2, 
+        .markdown-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .markdown-content h1 { font-size: 1.75rem; }
+        .markdown-content h2 { font-size: 1.5rem; }
+        .markdown-content h3 { font-size: 1.25rem; }
+        
+        .markdown-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .markdown-content blockquote {
+            border-left: 4px solid var(--el-color-primary);
+            padding: 0.5rem 1rem;
+            margin: 1rem 0;
+            background-color: rgba(64, 158, 255, 0.1);
+            color: var(--text-secondary);
+        }
+        
+        .markdown-content pre {
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        
+        .markdown-content code {
+            font-family: 'Courier New', monospace;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        
+        .markdown-content ul, 
+        .markdown-content ol {
+            padding-left: 2rem;
+            margin: 1rem 0;
+        }
+        
+        .markdown-content li {
+            margin: 0.5rem 0;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .streaming-char {
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .action-buttons .el-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container" :class="{ 'dark-theme': isDarkTheme }">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-video"></i>
+                    <h1>视频转讲义 - 智能学习助手</h1>
+                </div>
+                <div>
+                    <el-switch
+                        v-model="isDarkTheme"
+                        inline-prompt
+                        active-text="暗"
+                        inactive-text="亮"
+                        style="margin-right: 16px;"
+                    />
+                    <span><i class="fas fa-robot"></i> AI驱动</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="main-content">
+            <!-- 输入表单 -->
+            <div class="card" v-show="currentStep === 'input'">
+                <div class="card-title">
+                    <i class="fas fa-play-circle"></i>
+                    <h2>开始转换</h2>
+                </div>
+
+                <el-form :model="formData" ref="videoForm" :rules="formRules" label-position="top">
+                    <el-form-item label="YouTube视频URL或ID" prop="videoId">
+                        <el-input 
+                            v-model="formData.videoId" 
+                            placeholder="例如: https://www.youtube.com/watch?v=dQw4w9WgXcQ 或 dQw4w9WgXcQ"
+                            clearable
+                        ></el-input>
+                    </el-form-item>
+
+                    <el-row :gutter="20">
+                        <el-col :span="24" :md="12">
+                            <el-form-item label="AI模型名称" prop="modelName">
+                                <div style="display: flex; gap: 10px;">
+                                    <el-input 
+                                        v-model="formData.modelName" 
+                                        placeholder="例如: gemini/gemini-1.5-pro-latest"
+                                        clearable
+                                    ></el-input>
+                                    <el-button 
+                                        type="primary" 
+                                        @click="validateModel" 
+                                        :loading="validatingModel"
+                                        :icon="validatingModel ? '' : 'Check'"
+                                    >验证</el-button>
+                                </div>
+                                <div class="model-status" :class="modelStatusClass">
+                                    <i :class="modelStatusIcon"></i> {{ modelStatus }}
+                                </div>
+                                <div class="model-examples">
+                                    <el-collapse>
+                                        <el-collapse-item title="常用模型示例">
+                                            <div><strong>Anthropic:</strong> claude-3-5-sonnet-20240620</div>
+                                            <div><strong>Google:</strong> gemini/gemini-1.5-pro-latest</div>
+                                            <div><strong>OpenAI:</strong> gpt-4-turbo</div>
+                                        </el-collapse-item>
+                                    </el-collapse>
+                                </div>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="24" :md="12">
+                            <el-form-item label="讲义语言" prop="language">
+                                <el-select v-model="formData.language" style="width: 100%;">
+                                    <el-option label="简体中文" value="简体中文"></el-option>
+                                    <el-option label="English" value="English"></el-option>
+                                    <el-option label="自定义语言" value="custom"></el-option>
+                                </el-select>
+                                <el-input 
+                                    v-if="formData.language === 'custom'" 
+                                    v-model="formData.customLanguage" 
+                                    placeholder="请输入语言名称，例如：繁体中文、日本語、Français等"
+                                    style="margin-top: 10px;"
+                                    clearable
+                                ></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+
+                    <el-form-item>
+                        <el-button 
+                            type="primary" 
+                            @click="submitForm" 
+                            :loading="processing"
+                            :disabled="processing"
+                            style="width: 100%;"
+                        >
+                            <i class="fas fa-magic" v-if="!processing"></i>
+                            <span>{{ processing ? '处理中...' : '开始生成讲义' }}</span>
+                        </el-button>
+                    </el-form-item>
+                </el-form>
+            </div>
+
+            <!-- 进度显示 -->
+            <div class="card" v-show="currentStep === 'processing'">
+                <div class="card-title">
+                    <i class="fas fa-cog fa-spin"></i>
+                    <h2>处理进度</h2>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span>{{ progressMessage }}</span>
+                        <span>{{ progressPercent }}%</span>
+                    </div>
+                    <el-progress 
+                        :percentage="progressPercent" 
+                        :status="progressStatus"
+                        :striped="true"
+                        :striped-flow="true"
+                    ></el-progress>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <el-alert
+                        title="处理时间可能需要1-3分钟，请耐心等待..."
+                        type="info"
+                        :closable="false"
+                        show-icon
+                    ></el-alert>
+                </div>
+
+                <div v-if="isStreaming" style="margin-top: 20px;">
+                    <div class="card-title">
+                        <i class="fas fa-file-alt"></i>
+                        <h2>实时生成内容</h2>
+                    </div>
+                    <div class="markdown-content" v-html="renderedStreamingContent"></div>
+                </div>
+            </div>
+
+            <!-- 结果显示 -->
+            <div class="card" v-show="currentStep === 'result'">
+                <div class="card-title">
+                    <i class="fas fa-file-alt"></i>
+                    <h2>生成的讲义</h2>
+                </div>
+
+                <div class="action-buttons">
+                    <el-button @click="copyContent" :icon="Copy">复制内容</el-button>
+                    <el-button type="success" @click="downloadMarkdown" :icon="Download">下载 Markdown</el-button>
+                </div>
+
+                <div class="markdown-content" v-html="renderedContent"></div>
+
+                <div style="margin-top: 20px; display: flex; justify-content: space-between; color: var(--text-secondary);">
+                    <span>
+                        <i class="fas fa-robot"></i> 模型: {{ resultData.model_used }}
+                    </span>
+                    <span>
+                        <i class="fas fa-clock"></i> 生成时间: {{ formatDate(resultData.created_at) }}
+                    </span>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <el-button @click="resetForm" type="primary" plain style="width: 100%;">
+                        <i class="fas fa-redo"></i> 重新开始
+                    </el-button>
+                </div>
+            </div>
+
+            <!-- 错误显示 -->
+            <div class="card" v-show="currentStep === 'error'">
+                <el-result
+                    icon="error"
+                    title="处理失败"
+                    :sub-title="errorMessage"
+                >
+                    <template #extra>
+                        <el-button type="primary" @click="resetForm">重新开始</el-button>
+                    </template>
+                </el-result>
+            </div>
+        </main>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <!-- Element Plus -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.full.min.js"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <!-- Highlight.js for code syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <!-- Mermaid for diagrams -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.2.4/mermaid.min.js"></script>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+        const { ElMessage } = ElementPlus;
+        
+        // 设置 marked 选项
+        marked.setOptions({
+            highlight: function(code, language) {
+                if (language && hljs.getLanguage(language)) {
+                    return hljs.highlight(code, { language }).value;
+                } else {
+                    return hljs.highlightAuto(code).value;
+                }
+            },
+            breaks: true
+        });
+
+        // 配置 mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose'
+        });
+
+        const app = createApp({
+            setup() {
+                const apiBase = '/api/v1';
+                const isDarkTheme = ref(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                const currentStep = ref('input');
+                const currentVideoId = ref(null);
+                const pollInterval = ref(null);
+                const eventSource = ref(null);
+                
+                // 表单数据
+                const formData = ref({
+                    videoId: '',
+                    modelName: 'gemini/gemini-1.5-pro-latest',
+                    language: '简体中文',
+                    customLanguage: ''
+                });
+                
+                // 表单验证规则
+                const formRules = {
+                    videoId: [
+                        { required: true, message: '请输入YouTube视频URL或ID', trigger: 'blur' }
+                    ],
+                    modelName: [
+                        { required: true, message: '请输入AI模型名称', trigger: 'blur' }
+                    ]
+                };
+                
+                // 模型验证状态
+                const validatingModel = ref(false);
+                const modelStatus = ref('请输入模型名称');
+                const modelStatusType = ref('default'); // default, success, error
+                
+                // 处理状态
+                const processing = ref(false);
+                const progressMessage = ref('准备中...');
+                const progressPercent = ref(0);
+                const isStreaming = ref(false);
+                const streamingContent = ref('');
+                const errorMessage = ref('');
+                
+                // 结果数据
+                const resultData = ref({
+                    title: '',
+                    content: '',
+                    model_used: '',
+                    created_at: ''
+                });
+                
+                // 表单引用
+                const videoForm = ref(null);
+                
+                // 计算属性
+                const modelStatusClass = computed(() => {
+                    switch (modelStatusType.value) {
+                        case 'success': return 'text-success';
+                        case 'error': return 'text-danger';
+                        default: return 'text-secondary';
+                    }
+                });
+                
+                const modelStatusIcon = computed(() => {
+                    switch (modelStatusType.value) {
+                        case 'success': return 'fas fa-check-circle';
+                        case 'error': return 'fas fa-exclamation-circle';
+                        default: return 'fas fa-info-circle';
+                    }
+                });
+                
+                const progressStatus = computed(() => {
+                    if (progressPercent.value < 100) return '';
+                    return 'success';
+                });
+                
+                const renderedContent = computed(() => {
+                    return renderMarkdown(resultData.value.content || '');
+                });
+                
+                const renderedStreamingContent = computed(() => {
+                    return renderMarkdown(streamingContent.value || '');
+                });
+                
+                // 监听主题变化
+                watch(isDarkTheme, (newVal) => {
+                    if (newVal) {
+                        document.body.classList.add('dark-theme');
+                        mermaid.initialize({ theme: 'dark' });
+                    } else {
+                        document.body.classList.remove('dark-theme');
+                        mermaid.initialize({ theme: 'default' });
+                    }
+                    
+                    // 如果有已渲染的内容，重新渲染 mermaid 图表
+                    if (currentStep.value === 'result' || isStreaming.value) {
+                        setTimeout(() => {
+                            renderMermaidDiagrams();
+                        }, 100);
+                    }
+                });
+                
+                // 初始化
+                onMounted(() => {
+                    if (isDarkTheme.value) {
+                        document.body.classList.add('dark-theme');
+                        mermaid.initialize({ theme: 'dark' });
+                    }
+                });
+                
+                // 方法
+                function validateModel() {
+                    const modelName = formData.value.modelName.trim();
+                    if (!modelName) {
+                        modelStatus.value = '请输入模型名称';
+                        modelStatusType.value = 'error';
+                        return;
+                    }
+                    
+                    validatingModel.value = true;
+                    modelStatus.value = '验证中...';
+                    modelStatusType.value = 'default';
+                    
+                    fetch(`${apiBase}/models/validate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ model_name: modelName })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.is_valid) {
+                            modelStatus.value = '✅ 模型验证成功，可以使用';
+                            modelStatusType.value = 'success';
+                            ElMessage.success('模型验证成功');
+                        } else {
+                            modelStatus.value = '❌ 模型不可用或配置不正确';
+                            modelStatusType.value = 'error';
+                            ElMessage.error('模型验证失败');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('验证模型失败:', error);
+                        modelStatus.value = '❌ 验证请求失败';
+                        modelStatusType.value = 'error';
+                        ElMessage.error('验证请求失败');
+                    })
+                    .finally(() => {
+                        validatingModel.value = false;
+                    });
+                }
+                
+                function submitForm() {
+                    videoForm.value.validate((valid) => {
+                        if (!valid) {
+                            ElMessage.error('请填写所有必填字段');
+                            return;
+                        }
+                        
+                        // 处理语言参数
+                        let language = formData.value.language;
+                        if (language === 'custom') {
+                            const customLanguage = formData.value.customLanguage.trim();
+                            if (!customLanguage) {
+                                ElMessage.error('请输入自定义语言名称');
+                                return;
+                            }
+                            language = customLanguage;
+                        }
+                        
+                        const data = {
+                            video_id: formData.value.videoId,
+                            model_name: formData.value.modelName,
+                            language: language
+                        };
+                        
+                        processing.value = true;
+                        currentStep.value = 'processing';
+                        
+                        fetch(`${apiBase}/process`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw new Error(data.detail || '请求失败');
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            currentVideoId.value = data.video_id;
+                            
+                            // 开始轮询状态
+                            startPolling();
+                            
+                            // 尝试建立SSE连接
+                            connectToEventStream();
+                        })
+                        .catch(error => {
+                            console.error('提交失败:', error);
+                            errorMessage.value = error.message;
+                            currentStep.value = 'error';
+                            processing.value = false;
+                        });
+                    });
+                }
+                
+                function startPolling() {
+                    // 清除之前的轮询
+                    stopPolling();
+                    
+                    pollInterval.value = setInterval(() => {
+                        fetch(`${apiBase}/status/${currentVideoId.value}`)
+                            .then(response => response.json())
+                            .then(status => {
+                                updateProgress(status);
+                                
+                                if (status.status === 'completed') {
+                                    stopPolling();
+                                    showResult(status.result);
+                                } else if (status.status === 'error') {
+                                    stopPolling();
+                                    showError(status.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('轮询状态失败:', error);
+                                stopPolling();
+                                showError('获取处理状态失败');
+                            });
+                    }, 2000); // 每2秒轮询一次
+                }
+                
+                function stopPolling() {
+                    if (pollInterval.value) {
+                        clearInterval(pollInterval.value);
+                        pollInterval.value = null;
+                    }
+                }
+                
+                function connectToEventStream() {
+                    // 如果浏览器支持EventSource
+                    if (typeof EventSource !== 'undefined') {
+                        // 关闭之前的连接
+                        if (eventSource.value) {
+                            eventSource.value.close();
+                        }
+                        
+                        // 建立新的SSE连接
+                        const source = new EventSource(`${apiBase}/stream/${currentVideoId.value}`);
+                        eventSource.value = source;
+                        
+                        source.onopen = function() {
+                            console.log('SSE连接已建立');
+                            isStreaming.value = true;
+                        };
+                        
+                        source.onmessage = function(event) {
+                            const data = JSON.parse(event.data);
+                            
+                            if (data.type === 'content') {
+                                // 添加新内容到流
+                                streamingContent.value += data.content;
+                                
+                                // 如果有mermaid图表，延迟渲染
+                                if (data.content.includes('```mermaid')) {
+                                    setTimeout(() => {
+                                        renderMermaidDiagrams();
+                                    }, 100);
+                                }
+                            } else if (data.type === 'progress') {
+                                // 更新进度
+                                updateProgress({
+                                    message: data.message || progressMessage.value,
+                                    progress: data.progress || progressPercent.value
+                                });
+                            } else if (data.type === 'completed') {
+                                // 处理完成
+                                source.close();
+                                showResult(data.result);
+                            } else if (data.type === 'error') {
+                                // 处理错误
+                                source.close();
+                                showError(data.message);
+                            }
+                        };
+                        
+                        source.onerror = function(error) {
+                            console.error('SSE连接错误:', error);
+                            source.close();
+                            // 回退到轮询方式
+                            console.log('回退到轮询方式获取状态');
+                        };
+                    } else {
+                        console.log('浏览器不支持EventSource，使用轮询方式');
+                    }
+                }
+                
+                function closeEventStream() {
+                    if (eventSource.value) {
+                        eventSource.value.close();
+                        eventSource.value = null;
+                    }
+                }
+                
+                function updateProgress(status) {
+                    progressMessage.value = status.message || progressMessage.value;
+                    progressPercent.value = status.progress || progressPercent.value;
+                }
+                
+                function showResult(result) {
+                    closeEventStream();
+                    stopPolling();
+                    processing.value = false;
+                    currentStep.value = 'result';
+                    resultData.value = result;
+                    
+                    // 延迟渲染mermaid图表
+                    setTimeout(() => {
+                        renderMermaidDiagrams();
+                    }, 100);
+                }
+                
+                function showError(message) {
+                    closeEventStream();
+                    stopPolling();
+                    processing.value = false;
+                    errorMessage.value = message;
+                    currentStep.value = 'error';
+                }
+                
+                function resetForm() {
+                    videoForm.value.resetFields();
+                    currentStep.value = 'input';
+                    streamingContent.value = '';
+                    isStreaming.value = false;
+                    progressPercent.value = 0;
+                    progressMessage.value = '准备中...';
+                }
+                
+                function renderMarkdown(content) {
+                    if (!content) return '';
+                    
+                    // 预处理mermaid代码块
+                    let processedContent = content.replace(/```mermaid\n([\s\S]*?)\n```/g, (match, code) => {
+                        const id = 'mermaid-' + Math.random().toString(36).substring(2, 10);
+                        return `<div class="mermaid-diagram"><div class="mermaid" id="${id}">${code}</div></div>`;
+                    });
+                    
+                    // 使用marked渲染markdown
+                    let html = marked.parse(processedContent);
+                    
+                    return html;
+                }
+                
+                function renderMermaidDiagrams() {
+                    // 查找所有mermaid图表并渲染
+                    document.querySelectorAll('.mermaid').forEach(element => {
+                        // 检查是否已经渲染过
+                        if (element.getAttribute('data-processed') === 'true') return;
+                        
+                        try {
+                            mermaid.render(element.id || `mermaid-${Date.now()}`, element.textContent).then(result => {
+                                element.innerHTML = result.svg;
+                                element.setAttribute('data-processed', 'true');
+                            });
+                        } catch (error) {
+                            console.error('Mermaid渲染错误:', error);
+                            element.innerHTML = `<div class="error">图表渲染失败: ${error.message}</div>`;
+                        }
+                    });
+                }
+                
+                function copyContent() {
+                    navigator.clipboard.writeText(resultData.value.content)
+                        .then(() => {
+                            ElMessage.success('内容已复制到剪贴板');
+                        })
+                        .catch(err => {
+                            console.error('复制失败:', err);
+                            ElMessage.error('复制失败');
+                        });
+                }
+                
+                function downloadMarkdown() {
+                    const blob = new Blob([resultData.value.content], { type: 'text/markdown' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${resultData.value.title || '讲义'}.md`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    ElMessage.success('文件下载已开始');
+                }
+                
+                function formatDate(dateString) {
+                    if (!dateString) return '-';
+                    const date = new Date(dateString);
+                    return date.toLocaleString('zh-CN');
+                }
+                
+                return {
+                    isDarkTheme,
+                    currentStep,
+                    formData,
+                    formRules,
+                    videoForm,
+                    validatingModel,
+                    modelStatus,
+                    modelStatusType,
+                    modelStatusClass,
+                    modelStatusIcon,
+                    processing,
+                    progressMessage,
+                    progressPercent,
+                    progressStatus,
+                    isStreaming,
+                    renderedStreamingContent,
+                    errorMessage,
+                    resultData,
+                    renderedContent,
+                    
+                    validateModel,
+                    submitForm,
+                    resetForm,
+                    copyContent,
+                    downloadMarkdown,
+                    formatDate,
+                    
+                    // Element Plus 图标
+                    Check: 'Check',
+                    Copy: 'CopyDocument',
+                    Download: 'Download'
+                };
+            }
+        });
+        
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>
